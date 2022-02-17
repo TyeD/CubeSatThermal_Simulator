@@ -8,6 +8,12 @@ Created on Wed Feb 16 14:50:47 2022
 import numpy as np
 import matplotlib.pyplot as plt
 #%%
+'''
+Write function to pass varity of emissivity and absorbtivity constants in and
+plot the output on the same graph. This will require some research into the statistical
+approch that should be made.
+
+'''
 #Orbital parameters:
 #=================================#
 #Constants 
@@ -24,27 +30,25 @@ massE = 5.972e24 #kg
 d_sun = 149.6e9 #m
 blk_body_temp_earth = 254.0 #K
 solar_flux = 1361 # W/m^2 
-solar_emission = 237
+earth_emission = 237
 albedo_avg = .3
 r_Earth = 6361 #km
 Umbra = 2160 #s
 Penumbra = 8 #s 
 #==========================#
 #Satellite Dimension
-
-
-
-
-
-
-
-
-
+#As faces exposed to sun Ae is faces exposed to earth A1f is a single face At is the total area (Note this should be improved)
+A1f = 22919 #mm 
+A1f = A1f/1e6                         #Play with this parameter
+At = 4*A1f                            #Play with this parameter
+As = 2 *A1f 
+Ae = A1f                              #Play with this parameter
 
 #======================================#
-#Orbital Altitude from Earth's surface: 
+##Orbital Altitude from Earth's surface: 
 #LEO (Low Earth Orbit)
 h = 300 #km
+print("Orbit height above Earth's surface': " + str(h)+ " km \n")
 
 #Orbital Radius 
 r_orb1 = r_Earth + h #km
@@ -62,31 +66,36 @@ P = np.sqrt((4*(np.pi**2)*r_orb**3)/(G*massE))
 print("Orbital Period: %.1f s" %(P))
 
 #=====================================================#
-#Asorbitivity, 6061 Aluminium 
-absorb = 0.031
-#Emissivity, 6061 Aluminium
-emit = 0.039
+#Asorbitivity
+absorb = 0.65                 #Play with this parameter
+#Emissivity
+emitAl = 0.13            #Play with this parameter 
+'''
+Usally spacecraft remain within 126 degrees but this depends on electrical
+system temperature operatating requirements. A material with a emissivity of
+greater then .3 would keep the space craft below 110 degrees C. 
+'''
 #=====================================================#
 #Simulation Time Step
-dt = 1000#Time steps 
+dt = 1000#Time steps                   #Play with this parameter
 t = np.linspace(0, P, dt)
 #======================================================#
 #View Factor Cacluation
-phi = np.abs(np.pi - t)
+
 Phi = t 
 #NOTE: Phi is currently unknown need to ask ADCS
 # about if they have any goals for the 
 #attitude of the ship (orententation w.r.t. some frame) 
 #over the orbit.
 
-
-#Trigonometric relations for 
+#Trigonometric relation 
 k = r_Earth/(r_Earth+h)
 #Alpha is the angle the sat will fly past in single cycle.
 alpha = np.linspace(0, 2*np.pi, dt)
+phi = np.abs(np.pi - alpha)
 
 
-
+##Cacluate sun emitted view factor
 #Generate empty lists for each if statment
 Xe1 = []
 Xe2 = []
@@ -101,41 +110,120 @@ for i in range(len(alpha)):
         Xe1.append((k**2)*np.cos(alpha[i]))
 
     elif np.arccos(k) < alpha[i] < (np.pi - np.arccos(k)):
-        Xe2.append((k**2)*np.cos(alpha[i]) + (1/np.pi)*((np.pi/2)-((1-k**2)*(k**2 - np.cos(alpha[i])**2))**(1/2)-np.arcsin(((1-k**2))**(1/2)/np.sin(alpha[i]))-((k**2)*np.cos(alpha[i])*np.arccos(((1/k**2)-1)**(1/2)*(np.cos(alpha[i]))/np.sin(alpha[i])))))
+        Xe2.append((k**2)*np.cos(alpha[i]) + 
+        (1/np.pi)*((np.pi/2)-((1-k**2)*(k**2 - np.cos(alpha[i])**2))**(1/2)-
+        np.arcsin(((1-k**2))**(1/2)/np.sin(alpha[i]))-
+        ((k**2)*np.cos(alpha[i])*np.arccos(((1/k**2)-1)**(1/2)*
+        (np.cos(alpha[i]))/np.sin(alpha[i])))))
     
     elif (np.pi - np.arccos(k)) <= alpha[i] <= (np.pi + np.arccos(k)):
         Xe3.append(0*alpha[i])
     
     elif (np.pi + np.arccos(k)) < alpha[i] < (2*np.pi - np.arccos(k)):
-        Xe4.append((k**2)*np.cos(2*np.pi - alpha[i]) + (1/np.pi)*((np.pi/2)-((1-k**2)*(k**2 - np.cos(2*np.pi - alpha[i])**2))**(1/2) - (np.arcsin((((1-k**2))**(1/2))/np.sin(2*np.pi - alpha[i]))) - ((k**2)*np.cos(2*np.pi - alpha[i])*np.arccos(((1/((k**2))-1)**(1/2))*(np.cos(2*np.pi - alpha[i]))/np.sin(2*np.pi - alpha[i])))))
+        Xe4.append((k**2)*np.cos(2*np.pi - alpha[i]) + 
+        (1/np.pi)*((np.pi/2)-((1-k**2)*(k**2 - np.cos(2*np.pi - alpha[i])**2))**(1/2) - 
+        (np.arcsin((((1-k**2))**(1/2))/np.sin(2*np.pi - alpha[i]))) - 
+        ((k**2)*np.cos(2*np.pi - alpha[i])*np.arccos(((1/((k**2))-1)**(1/2))*(np.cos(2*np.pi - 
+        alpha[i]))/np.sin(2*np.pi - alpha[i])))))
     
     elif (2*np.pi - np.arccos(k)) <= alpha[i] <= (2*np.pi):
         Xe5.append((k**2)*np.cos(alpha[i]))
+
 #Append Values to Xe
 Xe = np.append(Xe, Xe1)
 Xe = np.append(Xe, Xe2)
 Xe = np.append(Xe, Xe3)
 Xe = np.append(Xe, Xe4)
 Xe = np.append(Xe, Xe5)
+#=============================================================================#
+#Albedo View Factor
+#(Note may not be required, may just be constant, depends on ADCS)
+#====================================================#
+#Required to make albedo view factor zero 
+Xa1 = Xe*np.cos(phi)
+Xa = []
+for i in range(len(t)):
+    if Xa1[i] > 0:    
+        Xa.append(Xe[i]*np.cos(phi[i]))
+
+    elif Xa1[i] <= 0:
+
+        Xa.append(0*phi[i])
+
+Xa = np.array(Xa)
 
 
-Xa = Xe*np.cos(phi)
+#Heat flux calcluations
+#==================================================#
+qs = solar_flux*absorb*Xe
+q_earth_emitted = earth_emission*absorb
+q_earth_reflected = albedo_avg*solar_flux*absorb*Xa
+#==================================================#
 
-qe = solar_emission*absorb*Xe
-qa = albedo_avg*solar_flux*absorb*Xa
-plt.plot(t, Xe)
-plt.show()
+
+#Electronics Power and survival temps 
+#=================================================#
+Qelec = .15 #W Base assmption more detailed model can be applied below in space below 
+Tmax = 20; Tmin = -5
+#
+#
+#
+#=================================================#
 
 
-plt.plot(t,Xe, 'y')
+#Temperature Function (Heat balence)
+#https://www.alternatewars.com/BBOW/Space/Spacecraft_Ext_Temps.htm
+#=========================================#
+Ts = (((((q_earth_emitted*Ae)+(qs*As))+
+        (q_earth_reflected*Ae)+Qelec)/(emitAl*Boltz*At))**(1/4)) - 273.13 #Degree C
+#=========================================#
+
+
+#Produce Plots
+#=======================================================================#
+plt.plot(t,Xe, 'y', label = r'Sun emitted radiation $X_{emitted}$')
+plt.plot(t, Xa, 'k', label = r'Earth Reflected radiation $X_{albedo}$')
 plt.xlabel("Time (s)")
-plt.ylabel(r"Sun View Factor $X_e$")
+plt.ylabel(r"View Factor")
 plt.title("Veiw Factor as function of time over one period of a LEO")
+plt.legend()
 plt.show()
 
-
-plt.plot(t, qe, 'r')
+plt.plot(t, qs, 'b')
+plt.xlabel("Time (s)")
+plt.ylabel(r'Heat flux $(W/m^2)$')
+plt.title("Sun's heat flux as function of time over one period of a LEO")
 plt.show()
 
-plt.plot(t, Xa, 'k')
+'''
+plt.plot(t, q_earth_emitted , 'r')
+plt.xlabel("Time (s)")
+plt.ylabel(r'Heat flux $(W/m^2)$')
+plt.title("Earths's emitted heat flux as function of time over one full orbit")
 plt.show()
+'''
+'''
+plt.plot(t, q_earth_reflected, 'b')
+plt.xlabel("Time (s)")
+plt.ylabel(r'Heat flux $(W/m^2)$')
+plt.title("Earths's reflected heat flux as function of time over one full orbit")
+plt.show()
+'''
+
+plt.plot(t, q_earth_reflected+q_earth_emitted+qs, 'r')
+plt.xlabel("Time (s)")
+plt.ylabel(r'Heat flux $(W/m^2)$')
+plt.title("Total heat flux as function of time over one full orbit")
+plt.show()
+
+plt.plot(t, Ts)
+plt.plot(t, Tmax*(t/t), 'r--', label = r'$T_{max}$ and $T_{min}$ for Electronics')
+plt.plot(t, Tmin*(t/t), 'r--')
+plt.xlabel("Time (s)")
+plt.ylabel(r'Temperature $(^\circ C)$')
+plt.title("Temperature as function of time over one full orbit")
+plt.legend()
+plt.show()
+
+#=======================================================================#
+
