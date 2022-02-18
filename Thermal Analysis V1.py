@@ -56,8 +56,6 @@ r_orb = r_orb1*10**3 #m
 print("Orbital Radius is: %.0f km \n" %(r_orb1))
 
 #Flight Velocity 
-c1 = 398600.5 #Constant 1 
-c2 = 6378.14 #Constant 2
 orb_vel = np.sqrt(G*massE/r_orb) #m/s
 print("Orbital Velocity is: %.2f m/s\n" % (orb_vel))
 
@@ -67,9 +65,9 @@ print("Orbital Period: %.1f s" %(P))
 
 #=====================================================#
 #Asorbitivity
-absorb = 0.65                 #Play with this parameter
+absorb = .14          #Play with this parameter
 #Emissivity
-emitAl = 0.13            #Play with this parameter 
+emitAl = 0.22      #Play with this parameter 
 '''
 Usally spacecraft remain within 126 degrees but this depends on electrical
 system temperature operatating requirements. A material with a emissivity of
@@ -163,8 +161,8 @@ q_earth_reflected = albedo_avg*solar_flux*absorb*Xa
 
 #Electronics Power and survival temps 
 #=================================================#
-Qelec = .15 #W Base assmption more detailed model can be applied below in space below 
-Tmax = 20; Tmin = -5
+Qelec = 3*1.9 #W Base assmption more detailed model can be applied below in space below 1U cube sat = 1.9W 
+Tmax = 40; Tmin = 10
 #
 #
 #
@@ -174,18 +172,18 @@ Tmax = 20; Tmin = -5
 #Temperature Function (Heat balence)
 #https://www.alternatewars.com/BBOW/Space/Spacecraft_Ext_Temps.htm
 #=========================================#
-Ts = (((((q_earth_emitted*Ae)+(qs*As))+
-        (q_earth_reflected*Ae)+Qelec)/(emitAl*Boltz*At))**(1/4)) - 273.13 #Degree C
+Ts = (((((qs*As*.3))+
+        (q_earth_reflected*Ae)+Qelec)/(emitAl*Boltz*At*.75))**(1/4)) - 273.13 #Degree C
 #=========================================#
 
 
 #Produce Plots
 #=======================================================================#
 plt.plot(t,Xe, 'y', label = r'Sun emitted radiation $X_{emitted}$')
-plt.plot(t, Xa, 'k', label = r'Earth Reflected radiation $X_{albedo}$')
+plt.plot(t, Xa, 'k', label = r'Earth reflected radiation $X_{albedo}$')
 plt.xlabel("Time (s)")
 plt.ylabel(r"View Factor")
-plt.title("Veiw Factor as function of time over one period of a LEO")
+plt.title("View Factor as function of time over one period of a LEO")
 plt.legend()
 plt.show()
 
@@ -222,7 +220,7 @@ plt.plot(t, Tmin*(t/t), 'r--')
 plt.xlabel("Time (s)")
 plt.ylabel(r'Temperature $(^\circ C)$')
 plt.title("Temperature as function of time over one full orbit")
-plt.legend()
+plt.legend(loc = 'best')
 plt.show()
 
 #=======================================================================#
